@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Home</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .nav-link.active {
+            font-weight: bold;
+            color: #000 !important;
+            background-color: #0d6efd;
+        }
+        .event-card {
+            transition: transform 0.2s ease-in-out;
+        }
+        .event-card:hover {
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body class="container py-4">
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light mb-4 shadow-sm rounded">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold">🎯 Admin Panel</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav me-auto">
+
+            </ul>
+            <a class="btn btn-outline-danger" href="/logout">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4" id="adminTab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="events-tab" data-bs-toggle="tab" data-bs-target="#events" type="button" role="tab">📋 My Events</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="create-tab" data-bs-toggle="tab" data-bs-target="#create" type="button" role="tab">➕ Create Event</button>
+    </li>
+</ul>
+
+<div class="tab-content" id="adminTabContent">
+
+    <!-- Events List -->
+    <div class="tab-pane fade show active" id="events" role="tabpanel" aria-labelledby="events-tab">
+        <div th:if="${events != null}">
+            <div class="row g-4">
+                <div class="col-md-4" th:each="event : ${events}">
+                    <div class="card event-card shadow-sm">
+                        <img th:src="${event.imageUrl}" class="card-img-top" th:alt="${event.name}" onerror="this.style.display='none';">
+                        <div class="card-body">
+                            <h5 class="card-title" th:text="${event.name}">Event Name</h5>
+                            <p class="card-text" th:text="${event.description}">Description here</p>
+                            <div class="d-flex justify-content-between">
+                                <a th:href="@{'/admin/events/registrations/' + ${event.id}}" class="btn btn-sm btn-outline-info">👥 View Participants</a>
+                                <a th:href="@{'/admin/events/edit/' + ${event.id}}" class="btn btn-sm btn-outline-primary">Edit</a>
+                                <a th:href="@{'/admin/events/delete/' + ${event.id}}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this event?')">Delete</a>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div th:if="${events == null || #lists.isEmpty(events)}">
+            <p class="text-muted">No events created yet. Click on the "Create Event" tab above to get started.</p>
+        </div>
+    </div>
+
+    <!-- Create Event Form -->
+    <div class="tab-pane fade" id="create" role="tabpanel" aria-labelledby="create-tab">
+        <div th:if="${event != null}">
+            <h3>Create New Event</h3>
+            <form action="/admin/events/create" method="post" enctype="multipart/form-data" th:object="${event}">
+                <div class="mb-3">
+                    <label class="form-label">Event Image</label>
+                    <input type="file" name="imageFile" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Event Name</label>
+                    <input type="text" name="name" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" class="form-control" rows="3" required></textarea>
+                </div>
+
+                <h5>Custom Questions</h5>
+                <div id="questions" class="mb-4"></div>
+                <button type="button" onclick="addQuestion()" class="btn btn-outline-secondary mb-3">➕ Add Question</button><br>
+                <button type="submit" class="btn btn-primary">🚀 Create Event</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    let questionIndex = 0;
+
+    function addQuestion() {
+        const container = document.getElementById("questions");
+        const qDiv = document.createElement("div");
+        qDiv.classList.add("mb-4", "border", "p-3", "rounded", "shadow-sm");
+        qDiv.setAttribute("data-index", questionIndex);
+
+        qDiv.innerHTML = `
+            <div class="mb-2">
+                <label class="form-label">Question Label:</label>
+                <input type="text" name="questions[${questionIndex}].label" class="form-control" required>
+            </div>
+            <div class="mb-2">
+                <label class="form-label">Question Type:</label>
+                <select name="questions[${questionIndex}].type" class="form-select" onchange="toggleOptions(this, ${questionIndex})">
+                    <option value="text">Text</option>
+                    <option value="select">Select</option>
+                    <option value="radio">Radio</option>
+                    <option value="checkbox">Checkbox</option>
+                    <option value="textarea">Textarea</option>
+                </select>
+            </div>
+            <div class="option-container" id="options-${questionIndex}" style="display:none;">
+                <label class="form-label">Answer Options:</label>
+                <div id="option-list-${questionIndex}"></div>
+                <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="addOption(${questionIndex})">Add Option</button>
+            </div>
+        `;
+
+        container.appendChild(qDiv);
+        questionIndex++;
+    }
+
+    function toggleOptions(selectElem, index) {
+        const typesWithOptions = ['select', 'radio', 'checkbox'];
+        const container = document.getElementById(`options-${index}`);
+        if (typesWithOptions.includes(selectElem.value)) {
+            container.style.display = "block";
+        } else {
+            container.style.display = "none";
+            document.getElementById(`option-list-${index}`).innerHTML = '';
+        }
+    }
+
+    function addOption(questionIdx) {
+    const list = document.getElementById(`option-list-${questionIdx}`);
+    const optionCount = list.children.length;
+
+    const optionGroup = document.createElement("div");
+    optionGroup.className = "input-group mb-2";
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.name = `questions[${questionIdx}].options[${optionCount}]`; // <== Fix here
+    input.className = "form-control";
+
+    const removeBtnWrapper = document.createElement("span");
+    removeBtnWrapper.className = "input-group-text p-0";
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "btn btn-outline-danger btn-sm";
+    removeBtn.textContent = "✖";
+    removeBtn.onclick = () => optionGroup.remove();
+
+    removeBtnWrapper.appendChild(removeBtn);
+    optionGroup.appendChild(input);
+    optionGroup.appendChild(removeBtnWrapper);
+    list.appendChild(optionGroup);
+}
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>User Home</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .event-card {
+            transition: transform 0.2s ease-in-out;
+        }
+        .event-card:hover {
+            transform: scale(1.02);
+        }
+        .event-img {
+            max-height: 160px;
+            object-fit: cover;
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm mb-4">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="#">🎟️ User Panel</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" href="/user/home">Home</a>
+                </li>
+            </ul>
+            <a class="btn btn-outline-danger" href="/logout">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <h2 class="mb-4">📅 Available Events</h2>
+
+    <div class="row g-4" th:if="${events != null}">
+        <div class="col-md-4" th:each="event : ${events}">
+            <div class="card event-card h-100 shadow-sm">
+                <img th:src="${event.imageUrl}" class="card-img-top event-img" alt="Event Image"
+                     onerror="this.style.display='none';" />
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title" th:text="${event.name}">Event Name</h5>
+                    <p class="card-text" th:text="${event.description}">Event Description</p>
+                    <div class="mt-auto">
+                        <a th:href="@{'/user/register/form/' + ${event.id}}" class="btn btn-primary w-100">Register</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${events == null or #lists.isEmpty(events)}" class="alert alert-info">
+        No events available at the moment. Please check back later!
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
